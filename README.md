@@ -10,3 +10,6 @@ SCRUM Master: Eduardo Izidorio
 Developer: Lucas Aguiar
 
 Developer: Yhasmim Ferreira
+
+## kanban
+[Kanban medBox](https://github.com/users/Lucas-Ladislau/projects/3)
