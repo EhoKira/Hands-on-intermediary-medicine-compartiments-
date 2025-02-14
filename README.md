@@ -5,7 +5,7 @@ Descrição do projeto do maloca dos iCoisas
 
 Product Owner: Thais Oliveira
 
-Scrum Master: Eduardo Izidorio
+SCRUM Master: Eduardo Izidorio
 
 Developer: Lucas Aguiar
 
