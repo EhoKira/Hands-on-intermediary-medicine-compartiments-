@@ -3,7 +3,7 @@ Descrição do projeto do maloca dos iCoisas
 
 # Organograma
 
-Procdut Owner: Thais Oliveira
+Product Owner: Thais Oliveira
 
 Scrum Master: Eduardo Izidorio
 
