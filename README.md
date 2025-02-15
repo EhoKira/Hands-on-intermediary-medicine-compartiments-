@@ -11,5 +11,7 @@ Developer: Lucas Aguiar
 
 Developer: Yhasmim Ferreira
 
+Developer: Kamila Leite
+
 ## kanban
 [Kanban medBox](https://github.com/users/Lucas-Ladislau/projects/3)
