@@ -3,7 +3,7 @@ Descrição do projeto do maloca dos iCoisas
 
 # Organograma
 <p align="center">
-<img src="Organograma/Organograma KOALA CORP.png" alt="Organograma Koala Corp" width="300" height="300">
+<img src="Organograma/Organograma KOALA CORP.png" alt="Organograma Koala Corp" width="600" height="600">
 </p>
 
 ## kanban
