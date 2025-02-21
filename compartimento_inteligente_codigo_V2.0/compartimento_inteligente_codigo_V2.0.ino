@@ -4,14 +4,14 @@
 #include <DHT.h>
 
 // Configurações de rede Wi-Fi
-const char* ssid = "SSID";
-const char* password = "password";
+const char* ssid = "Starlink_CIT";
+const char* password = "Ufrr@2024Cit";
 
 // Configurações do HiveMQ Broker
-const char* mqtt_server = "SERVER_URL";
-const char* mqtt_topic = "TOPIC";
-const char* mqtt_username = "USERNAME";
-const char* mqtt_password = "PASSWORD_HIVE";
+const char* mqtt_server = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
+const char* mqtt_topic = "Test";
+const char* mqtt_username = "hivemq.webclient.1739908772463";
+const char* mqtt_password = "nI$?fQdxD@&83AFB1mw5";
 const int mqtt_port = 8883;
 
 WiFiClientSecure espClient;
@@ -118,6 +118,15 @@ void lerTemperaturaEUmidade() {
     Serial.print("°C  Umidade: ");
     Serial.print(umidade);
     Serial.println("%");
+
+    // Verifica se a umidade está acima de 60%
+    if (umidade > 80) {
+      Serial.println("Alerta: Umidade acima de 80%");
+      tone(buzzer, 1000);  // Buzzer soa a 1000Hz
+      client.publish("alerta/umidade", "Umidade acima de 80%");  // Publica mensagem MQTT
+    } else {
+      noTone(buzzer);  // Desliga o buzzer se a umidade não estiver alta
+    }
   }
 }
 
@@ -158,4 +167,5 @@ void loop() {
   lerTemperaturaEUmidade();
   
   delay(5000);  // Aguarda 5 segundos antes de fazer a próxima leitura
+
 }
