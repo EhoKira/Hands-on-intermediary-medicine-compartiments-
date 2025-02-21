@@ -3,7 +3,7 @@ Descrição do projeto do maloca dos iCoisas
 
 # Organograma
 <p align="center">
-<img src="https://github.com/Lucas-Ladislau/Hands-on-intermediary-medicine-compartiments-/blob/0b086aa858195648b17dd5a9f7c5089d54f6030b/Organograma/Organograma%20KOALA%20CORP.png" alt="Organograma Koala Corp" width="300" height="300">
+<img src="Organograma/Organograma KOALA CORP.png" alt="Organograma Koala Corp" width="300" height="300">
 </p>
 
 ## kanban
