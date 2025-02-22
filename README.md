@@ -1,5 +1,14 @@
 # Hands-on-intermediary
-Descrição do projeto do maloca dos iCoisas
+
+# Problema
+A administração de medicamentos em idosos, especialmente aqueles que convivem com múltiplas condições de saúde, apresenta desafios significativos. A necessidade de seguir horários rigorosos para a ingestão de diferentes remédios aumenta o risco de confusões, esquecimentos e erros. Essas situações podem resultar em complicações graves, comprometendo tanto a saúde quanto a qualidade de vida dos idosos. Diante disso, torna-se essencial adotar soluções que minimizem esses riscos e ofereçam suporte prático para a rotina de medicação.
+
+# Solução
+A MedBox é um compartimento inteligente que ajuda a organizar e distribuir medicamentos no horário certo. Com compartimentos dedicados para cada remédio ou dose, o dispositivo lembra o paciente do momento exato de tomar a medicação por meio de alertas sonoros e visuais.
+
+Na nova versão, a MedBox ficou ainda mais eficiente. Agora, ela monitora as condições internas para garantir um melhor armazenamento dos medicamentos e reconhece quando alguém se aproxima, desligando os alertas automaticamente. Isso torna o uso mais prático e confortável, ajudando a evitar esquecimentos e garantindo mais segurança no tratamento.
+
+Com a MedBox, pacientes idosos e qualquer pessoa que precise seguir uma rotina de medicação podem contar com mais tranquilidade e bem-estar no dia a dia.
 
 # Organograma
 <p align="center">
