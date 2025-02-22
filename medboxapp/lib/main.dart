@@ -3,11 +3,11 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
 // 🔹 Conexão MQTT
-const String mqttServer = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
+const String mqttServer = "URL";
 const int mqttPort = 8883;
-const String mqttUser = "hivemq.webclient.1740248321765";
-const String mqttPassword = "jY%XB7Ps86&Jbu<m*G2l";  
-const String mqttTopic = "atividades/registro";
+const String mqttUser = "USER";
+const String mqttPassword = "PASSWORD";  
+const String mqttTopic = "TOPIC";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Garante inicialização correta do Flutter antes de chamadas assíncronas
