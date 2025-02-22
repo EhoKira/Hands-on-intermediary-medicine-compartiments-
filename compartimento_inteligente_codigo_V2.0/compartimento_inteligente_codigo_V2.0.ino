@@ -4,14 +4,15 @@
 #include <DHT.h>
 
 // Configurações de rede Wi-Fi
-const char* ssid = "Starlink_CIT";
-const char* password = "Ufrr@2024Cit";
+const char* ssid = "SSID";
+const char* password = "PASSWORD";
 
 // Configurações do HiveMQ Broker
-const char* mqtt_server = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
-const char* mqtt_topic = "Test";
-const char* mqtt_username = "hivemq.webclient.1739908772463";
-const char* mqtt_password = "nI$?fQdxD@&83AFB1mw5";
+const char* mqtt_server = "URL_SERVER_MQTT";
+const char* mqtt_topic1 = "TOPIC1";
+const char* mqtt_topic2 = "TOPIC2";
+const char* mqtt_username = "USER_MQTT";
+const char* mqtt_password = "PASSWORD_MQTT";
 const int mqtt_port = 8883;
 
 WiFiClientSecure espClient;
@@ -37,9 +38,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(message);
 
   // Aciona os LEDs e o buzzer com base no tópico recebido
-  if (message == "remedio1") {
+  if (message == "Remedio registrado: Remedio 1") {
     acionaLedEBuzzer(led_remedio1, "Remédio 1");
-  } else if (message == "remedio2") {
+  } else if (message == "Remedio registrado: Remedio 2") {
     acionaLedEBuzzer(led_remedio2, "Remédio 2");
   }
 }
@@ -53,8 +54,7 @@ void setup_wifi() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.println("Wi-Fi conectado.");
+  Serial.println("\nWi-Fi conectado.");
 }
 
 // Função para reconectar ao broker MQTT
@@ -63,7 +63,7 @@ void reconnect() {
     Serial.print("Tentando se reconectar ao MQTT...");
     if (client.connect("ESP32Client", mqtt_username, mqtt_password)) {
       Serial.println("Conectado.");
-      client.subscribe(mqtt_topic);  // Inscreve-se no tópico
+      client.subscribe(mqtt_topic1);  // Inscreve-se no tópico
     } else {
       Serial.print("Falha, rc=");
       Serial.print(client.state());
@@ -73,22 +73,20 @@ void reconnect() {
   }
 }
 
-// Função para acionar o LED e o buzzer
+// Função para acionar o LED e o buzzer, desligando-os quando a pessoa se aproxima
 void acionaLedEBuzzer(int ledPin, const char* nomeRemedio) {
   Serial.println("Entrou");
   digitalWrite(ledPin, HIGH);  // Liga o LED
   tone(buzzer, 5000);          // Aciona o buzzer (5000Hz)
   Serial.println(nomeRemedio);
 
-  // Fica verificando a distância até ser 5 cm ou menos
+  // Aguarda a pessoa se aproximar (distância ≤ 5 cm) para desligar LED e buzzer
   while (medirDistancia() > 5) {
-    // Continua com o LED aceso e buzzer ligado enquanto a distância for maior que 5 cm
-    delay(100);  // Pequeno delay para não sobrecarregar o loop
+    delay(100);
   }
 
-  // Quando a distância for 5 cm ou menos, desliga o LED e buzzer
-  digitalWrite(ledPin, LOW);   // Desliga o LED
-  noTone(buzzer);              // Desliga o buzzer
+  digitalWrite(ledPin, LOW);
+  noTone(buzzer);
   Serial.println("Distância atingida, desligando LED e buzzer.");
 }
 
@@ -101,14 +99,14 @@ long medirDistancia() {
   digitalWrite(trigPin, LOW);
   
   long duracao = pulseIn(echoPin, HIGH);
-  long distancia = (duracao / 2) * 0.0343; // Calcula a distância em cm
+  long distancia = (duracao / 2) * 0.0343;
   return distancia;
 }
 
-// Função para ler dados do DHT11
+// Função para ler dados do DHT11 e enviar alerta se necessário
 void lerTemperaturaEUmidade() {
-  float temperatura = dht.readTemperature();  // Lê a temperatura em °C
-  float umidade = dht.readHumidity();         // Lê a umidade relativa
+  float temperatura = dht.readTemperature();
+  float umidade = dht.readHumidity();
   
   if (isnan(temperatura) || isnan(umidade)) {
     Serial.println("Falha ao ler do DHT11");
@@ -119,13 +117,19 @@ void lerTemperaturaEUmidade() {
     Serial.print(umidade);
     Serial.println("%");
 
-    // Verifica se a umidade está acima de 60%
     if (umidade > 80) {
-      Serial.println("Alerta: Umidade acima de 80%");
-      tone(buzzer, 1000);  // Buzzer soa a 1000Hz
-      client.publish("alerta/umidade", "Umidade acima de 80%");  // Publica mensagem MQTT
+      Serial.println("🚨 Alerta: Umidade acima de 80%");
+      tone(buzzer, 1000);
+      client.publish(mqtt_topic2, "Umidade acima de 80%");
+
+      // Aguarda a pessoa se aproximar (≤ 5 cm) para desligar o buzzer
+      while (medirDistancia() > 5) {
+        delay(100);
+      }
+      noTone(buzzer);
+      Serial.println("Pessoa se aproximou, buzzer desligado.");
     } else {
-      noTone(buzzer);  // Desliga o buzzer se a umidade não estiver alta
+      noTone(buzzer);
     }
   }
 }
@@ -133,18 +137,14 @@ void lerTemperaturaEUmidade() {
 void setup() {
   Serial.begin(115200);
 
-  // Configura os pinos dos LEDs como saída
   pinMode(led_remedio1, OUTPUT);
   pinMode(led_remedio2, OUTPUT);
   pinMode(buzzer, OUTPUT);
-  pinMode(23, OUTPUT);
-  pinMode(trigPin, OUTPUT);   // Configura o pino de Trigger como saída
-  pinMode(echoPin, INPUT);    // Configura o pino de Echo como entrada
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 
-  // Inicializa o sensor DHT11
   dht.begin();
 
-  // Conexão ao Wi-Fi e MQTT
   setup_wifi();
   espClient.setInsecure();
   client.setServer(mqtt_server, mqtt_port);
@@ -157,15 +157,11 @@ void loop() {
   }
   client.loop();
 
-  // Medir distância a cada 5 segundos
-  long distancia = medirDistancia();
   Serial.print("Distância: ");
-  Serial.print(distancia);
+  Serial.print(medirDistancia());
   Serial.println(" cm");
   
-  // Ler dados de temperatura e umidade a cada 5 segundos
   lerTemperaturaEUmidade();
   
-  delay(5000);  // Aguarda 5 segundos antes de fazer a próxima leitura
-
+  delay(5000);
 }
