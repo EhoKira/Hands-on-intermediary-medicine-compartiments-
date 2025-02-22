@@ -5,9 +5,7 @@ A administração de medicamentos em idosos, especialmente aqueles que convivem 
 
 # Solução
 A MedBox é um compartimento inteligente que ajuda a organizar e distribuir medicamentos no horário certo. Com compartimentos dedicados para cada remédio ou dose, o dispositivo lembra o paciente do momento exato de tomar a medicação por meio de alertas sonoros e visuais.
-
 Na nova versão, a MedBox ficou ainda mais eficiente. Agora, ela monitora as condições internas para garantir um melhor armazenamento dos medicamentos e reconhece quando alguém se aproxima, desligando os alertas automaticamente. Isso torna o uso mais prático e confortável, ajudando a evitar esquecimentos e garantindo mais segurança no tratamento.
-
 Com a MedBox, pacientes idosos e qualquer pessoa que precise seguir uma rotina de medicação podem contar com mais tranquilidade e bem-estar no dia a dia.
 
 # Organograma
