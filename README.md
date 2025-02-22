@@ -22,3 +22,5 @@ Com a MedBox, pacientes idosos e qualquer pessoa que precise seguir uma rotina d
 [Plano de teste](https://docs.google.com/document/d/1Ct1p1nlB6cs9Wzo0urMIza8SMZurDoA4/edit?usp=sharing&ouid=107033149333924170493&rtpof=true&sd=true)
 
 [Progresso](https://docs.google.com/document/d/1JBzfeq8OowKTLfAnmz8IeUQeDAoNlAer/edit?usp=sharing&ouid=107033149333924170493&rtpof=true&sd=true)
+
+[Requisitos funcionais](https://docs.google.com/document/d/16K2HUjZccPY4-9EPu_wtl0E8ZITCabvs/edit?usp=sharing&ouid=116675480830736353168&rtpof=true&sd=true)
