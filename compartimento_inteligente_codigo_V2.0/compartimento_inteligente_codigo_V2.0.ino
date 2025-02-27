@@ -4,15 +4,15 @@
 #include <DHT.h>
 
 // Configurações de rede Wi-Fi
-const char* ssid = "SSID";
-const char* password = "PASSWORD";
+const char* ssid = "Starlink_CIT";
+const char* password = "Ufrr@2024Cit";
 
 // Configurações do HiveMQ Broker
-const char* mqtt_server = "URL_SERVER_MQTT";
-const char* mqtt_topic1 = "TOPIC1";
-const char* mqtt_topic2 = "TOPIC2";
-const char* mqtt_username = "USER_MQTT";
-const char* mqtt_password = "PASSWORD_MQTT";
+const char* mqtt_server = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
+const char* mqtt_topic1 = "Umidade";
+const char* mqtt_topic2 = "Remedios";
+const char* mqtt_username = "hivemq.webclient.1740513563954";
+const char* mqtt_password = "Ix730QlcM2.<CrH&T,vb";
 const int mqtt_port = 8883;
 
 WiFiClientSecure espClient;
@@ -38,7 +38,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(message);
 
   // Aciona os LEDs e o buzzer com base no tópico recebido
-  if (message == "Remedio registrado: Remedio 1") {
+  if (message == "Remedio registrado: Remedio 1\") {
     acionaLedEBuzzer(led_remedio1, "Remédio 1");
   } else if (message == "Remedio registrado: Remedio 2") {
     acionaLedEBuzzer(led_remedio2, "Remédio 2");

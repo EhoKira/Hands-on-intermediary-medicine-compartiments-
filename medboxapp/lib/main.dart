@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart' as p;
+import 'database_helper.dart';
+
 
 // 🔹 Configuração MQTT
-const String mqttServer = "URL_DO_SERVIDOR_MQTT";
+const String mqttServer = "a75c63a4fa874ed09517714e6df8d815.s1.eu.hivemq.cloud";
 const int mqttPort = 8883;
-const String mqttUser = "USER_MQTT";
-const String mqttPassword = "PASSWORD_MQTT";
-const String mqttTopicUmidade = "TOPIC1";  // Tópico para receber umidade
-const String mqttTopicRemedio = "TOPIC2"; // Tópico para registrar remédio
+const String mqttUser = "hivemq.webclient.1740513563954";
+const String mqttPassword = "Ix730QlcM2.<CrH&T,vb";
+const String mqttTopicUmidade = "Umidade";  
+const String mqttTopicRemedio = "Remedios";  
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +29,72 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class Remedio {
+  int? id;
+  String nome;
+  String horario;
+
+  Remedio({this.id, required this.nome, required this.horario});
+
+  Map<String, dynamic> toMap() {
+    return {'id': id, 'nome': nome, 'horario': horario};
+  }
+
+  factory Remedio.fromMap(Map<String, dynamic> map) {
+    return Remedio(id: map['id'], nome: map['nome'], horario: map['horario']);
+  }
+}
+
+class DatabaseHelper {
+  static Database? _database;
+  static final DatabaseHelper instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => instance;
+
+  DatabaseHelper._internal();
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+  final databasesPath = await getDatabasesPath();
+  final path = p.join(databasesPath, 'medicina.db');
+
+  return await openDatabase(
+    path,
+    version: 1,
+    onCreate: (db, version) async {
+      await db.execute('''
+        CREATE TABLE remedios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            horario TEXT NOT NULL
+            )
+      ''');
+    },
+  );
+}
+
+
+  Future<int> inserirRemedio(Remedio remedio) async {
+    final db = await database;
+    return await db.insert('remedios', remedio.toMap());
+  }
+
+  Future<List<Remedio>> listarRemedios() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('remedios');
+    return List.generate(maps.length, (i) => Remedio.fromMap(maps[i]));
+  }
+
+  Future<void> deletarRemedio(int id) async {
+    final db = await database;
+    await db.delete('remedios', where: 'id = ?', whereArgs: [id]);
+  }
+}
+
 class RemedioScreen extends StatefulWidget {
   @override
   _RemedioScreenState createState() => _RemedioScreenState();
@@ -35,44 +105,68 @@ class _RemedioScreenState extends State<RemedioScreen> {
   String mensagemRecebida = "Aguardando notificações...";
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  late DatabaseHelper _dbHelper;
+  List<Remedio> _remedios = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Medbox")),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(padding: EdgeInsets.all(16), child: Text("📡 Última Notificação:\n$mensagemRecebida")),
+          Spacer(),
+          Center(
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () => _adicionarRemedio(context), // ✅ Agora passando o BuildContext corretamente
+                  child: Text("➕ Adicionar Remédio"),
+                ),
+              ],
+            ),
+          ),
+          Spacer(),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     configurarNotificacoes();
     conectarMQTT();
+    resetDatabase();
+    _dbHelper = DatabaseHelper();
+    //_carregarRemedios();
   }
 
-  // 🔹 Configuração de notificações locais
   void configurarNotificacoes() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
+    const AndroidInitializationSettings initSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    final InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-    );
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    final InitializationSettings initSettings = InitializationSettings(android: initSettingsAndroid);
+    await flutterLocalNotificationsPlugin.initialize(initSettings);
+  }
+
+  void enviarMensagem(String mensagem) {
+  final builder = MqttClientPayloadBuilder();
+  builder.addString(mensagem);
+
+  client.publishMessage(mqttTopicRemedio, MqttQos.atLeastOnce, builder.payload!);
   }
 
   Future<void> exibirNotificacao(String titulo, String mensagem) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'canal_alertas',
-      'Alertas de Sensor',
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'canal_alertas', 'Alertas de Sensor',
       importance: Importance.high,
       priority: Priority.high,
     );
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      titulo,
-      mensagem,
-      platformChannelSpecifics,
-    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+    await flutterLocalNotificationsPlugin.show(0, titulo, mensagem, platformDetails);
   }
 
-  // 🔹 Conectar ao MQTT e escutar mensagens
   Future<void> conectarMQTT() async {
     client = MqttServerClient(mqttServer, 'flutter_client');
     client.port = mqttPort;
@@ -89,9 +183,6 @@ class _RemedioScreenState extends State<RemedioScreen> {
 
     try {
       await client.connect();
-      print('✅ Conectado ao MQTT');
-
-      // 🔹 Escutar mensagens de umidade e remédio
       client.subscribe(mqttTopicUmidade, MqttQos.atLeastOnce);
       client.subscribe(mqttTopicRemedio, MqttQos.atLeastOnce);
       
@@ -100,68 +191,90 @@ class _RemedioScreenState extends State<RemedioScreen> {
           final recMessage = event[0].payload as MqttPublishMessage;
           final payload =
               MqttPublishPayload.bytesToStringAsString(recMessage.payload.message);
-
-          print('📩 Mensagem recebida: $payload');
-          
-          if (event[0].topic == mqttTopicUmidade && payload.contains("alta")) {
-            exibirNotificacao("🚨 Alerta!", "Nivel de umidade elevado na caixa!");
-          }
-          
-          if (event[0].topic == mqttTopicRemedio && payload.contains("apagado")) {
-            exibirNotificacao("✅ Confirmação", "Remedio tomado e LEDs apagados.");
-          }
-          
           setState(() {
             mensagemRecebida = payload;
           });
+
+          if (event[0].topic == mqttTopicUmidade && payload.contains("alta")) {
+            exibirNotificacao("🚨 Alerta!", "Umidade elevada na caixa!");
+          }
+          if (event[0].topic == mqttTopicRemedio && payload.contains("apagado")) {
+            exibirNotificacao("✅ Confirmação", "Remédio tomado!");
+          }
         }
       });
     } catch (e) {
-      print('❌ Erro na conexão MQTT: $e');
       client.disconnect();
     }
   }
 
-  // 🔹 Enviar mensagem ao MQTT
-  void enviarMensagem(String remedio) {
-    final builder = MqttClientPayloadBuilder();
-    builder.addString("Remedio registrado: $remedio");
-
-    client.publishMessage(mqttTopicRemedio, MqttQos.atLeastOnce, builder.payload!);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("💊 $remedio registrado e enviado ao MQTT")),
-    );
+  void _carregarRemedios() async {
+    final remedio = await _dbHelper.listarRemedios();
+    setState(() {
+      _remedios = remedio;
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Monitor de Remédios')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  void _adicionarRemedio(BuildContext context) async {
+    TextEditingController nomeController = TextEditingController();
+    TextEditingController horarioController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Adicionar Remédio"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ElevatedButton(
-              onPressed: () => enviarMensagem("Remedio 1"),
-              child: const Text('💊 Registrar Remédio 1'),
+            TextField(
+              controller: nomeController,
+              decoration: InputDecoration(labelText: "Nome"),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => enviarMensagem("Remedio 2"),
-              child: const Text('💊 Registrar Remédio 2'),
-            ),
-            SizedBox(height: 40),
-            Text(
-              "📡 Última Notificação:\n$mensagemRecebida",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
+            TextField(
+              controller: horarioController,
+              decoration: InputDecoration(labelText: "Horário (HH:MM)"),
             ),
           ],
         ),
-      ),
-    );
-  }
-} 
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancelar"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nomeController.text.isNotEmpty && horarioController.text.isNotEmpty) {
+                // ✅ Inserir no banco de dados
+                await _dbHelper.inserirRemedio(
+                  Remedio(nome: nomeController.text, horario: horarioController.text),
+                );
+                setState(() {
+                  _carregarRemedios();
+                });
+                enviarMensagem(nomeController.text);
 
+                Navigator.pop(context);
+              }
+            },
+            child: Text("Salvar"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+  void _deletarRemedio(int id) async {
+    await _dbHelper.deletarRemedio(id);
+    _carregarRemedios();
+  }
+
+  void resetDatabase() async {
+    final databasesPath = await getDatabasesPath();
+    final path = p.join(databasesPath, 'medicina.db'); // Ou 'remedios.db' se tiver alterado
+
+    await deleteDatabase(path);
+  }
+
+}

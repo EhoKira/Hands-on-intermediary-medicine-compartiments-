@@ -1,48 +1,81 @@
-// import 'package:sqflite/sqflite.dart';
-// import 'package:path/path.dart';
+import 'package:medboxapp/main.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'medicina_model.dart';
 
-// class DatabaseHelper {
-//   static final DatabaseHelper instance = DatabaseHelper._init();
-//   static Database? _database;
+class DatabaseHelper {
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  factory DatabaseHelper() => _instance;
 
-//   DatabaseHelper._init();
+  static Database? _database;
 
-//   Future<Database> get database async {
-//     if (_database != null) return _database!;
-//     _database = await initDB();
-//     return _database!;
-//   }
+  DatabaseHelper._internal();
 
-//   Future<Database> initDB() async {
-//     final dbPath = await getDatabasesPath();
-//     final path = join(dbPath, 'registros.db');
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
 
-//     return await openDatabase(
-//       path,
-//       version: 1,
-//       onCreate: (db, version) async {
-//         await db.execute('''
-//           CREATE TABLE IF NOT EXISTS registros (
-//             id INTEGER PRIMARY KEY AUTOINCREMENT,
-//             acesso_autorizado BOOLEAN NOT NULL,
-//             hora TEXT NOT NULL,
-//             data TEXT NOT NULL
-//           )
-//         ''');
-//       },
-//     );
-//   }
+  Future<Database> _initDatabase() async {
+    final databasesPath = await getDatabasesPath();
+    final path = join(databasesPath, 'remedios.db');
 
-//   // Função para inserir registro
-//   Future<void> insertRegistro(Map<String, dynamic> registro) async {
-//     final db = await database;
-//     await db.insert('registros', registro);
-//   }
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE remedios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            horario TEXT NOT NULL
+            )
+        ''');
+      },
+    );
+  }
 
-//   // Função para buscar todos os registros
-//   Future<List<Map<String, dynamic>>> getRegistros() async {
-//     final db = await database;
-//     final result = await db.query('registros');
-//     return result;
-//   }
-// }
+  // ✅ Inserir um novo remédio
+  Future<int> inserirRemedio(Remedio remedio) async {
+    final db = await database;
+    return await db.insert('remedios', remedio.toMap());
+  }
+
+  // ✅ Listar todos os remédios
+  Future<List<Remedio>> listarRemedios() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('remedios');
+    return List.generate(maps.length, (i) => Remedio.fromMap(maps[i]));
+  }
+
+  // ✅ Atualizar um remédio existente
+  Future<int> atualizarRemedio(Remedio remedio) async {
+    final db = await database;
+    return await db.update(
+      'remedios',
+      remedio.toMap(),
+      where: 'id = ?',
+      whereArgs: [remedio.id],
+    );
+  }
+
+  Future<List<Remedio>> getRemedios() async {
+  final db = await database;
+  final List<Map<String, dynamic>> maps = await db.query('remedios');
+  return List.generate(maps.length, (i) {
+    return Remedio.fromMap(maps[i]);
+  });
+  }
+
+  Future<void> deletarRemedio(int id) async {
+    final db = await database;
+    await db.delete('remedios', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ✅ Deletar todos os remédios (útil para testes)
+  Future<void> deletarTudo() async {
+    final db = await database;
+    await db.delete('remedios');
+  }
+}
