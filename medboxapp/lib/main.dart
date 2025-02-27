@@ -33,15 +33,16 @@ class Remedio {
   int? id;
   String nome;
   String horario;
+  int numeroCompartimento;
 
-  Remedio({this.id, required this.nome, required this.horario});
+  Remedio({this.id, required this.nome, required this.horario, required this.numeroCompartimento});
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'nome': nome, 'horario': horario};
+    return {'id': id, 'nome': nome, 'horario': horario, 'numero_compartimento': numeroCompartimento};
   }
 
   factory Remedio.fromMap(Map<String, dynamic> map) {
-    return Remedio(id: map['id'], nome: map['nome'], horario: map['horario']);
+    return Remedio(id: map['id'], nome: map['nome'], horario: map['horario'], numeroCompartimento: map['numero_compartimento']);
   }
 }
 
@@ -60,7 +61,7 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
   final databasesPath = await getDatabasesPath();
-  final path = p.join(databasesPath, 'medicina.db');
+  final path = p.join(databasesPath, 'remedios.db');
 
   return await openDatabase(
     path,
@@ -68,10 +69,11 @@ class DatabaseHelper {
     onCreate: (db, version) async {
       await db.execute('''
         CREATE TABLE remedios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            horario TEXT NOT NULL
-            )
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nome TEXT NOT NULL,
+          horario TEXT NOT NULL,
+          numero_compartimento INTEGER NOT NULL
+        )
       ''');
     },
   );
@@ -150,12 +152,12 @@ class _RemedioScreenState extends State<RemedioScreen> {
     await flutterLocalNotificationsPlugin.initialize(initSettings);
   }
 
-  void enviarMensagem(String mensagem) {
+  void enviarMensagem(String nome, String horario, int compartimento) {
   final builder = MqttClientPayloadBuilder();
-  builder.addString(mensagem);
+  builder.addString("$compartimento|$horario|$nome"); // Mensagem no formato "compartimento|horário|nome"
 
   client.publishMessage(mqttTopicRemedio, MqttQos.atLeastOnce, builder.payload!);
-  }
+}
 
   Future<void> exibirNotificacao(String titulo, String mensagem) async {
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
@@ -216,8 +218,9 @@ class _RemedioScreenState extends State<RemedioScreen> {
   }
 
   void _adicionarRemedio(BuildContext context) async {
-    TextEditingController nomeController = TextEditingController();
-    TextEditingController horarioController = TextEditingController();
+  TextEditingController nomeController = TextEditingController();
+  TextEditingController horarioController = TextEditingController();
+  TextEditingController numerocompartimentoController = TextEditingController();
 
   showDialog(
     context: context,
@@ -235,6 +238,11 @@ class _RemedioScreenState extends State<RemedioScreen> {
               controller: horarioController,
               decoration: InputDecoration(labelText: "Horário (HH:MM)"),
             ),
+            TextField(
+              controller: numerocompartimentoController,
+              decoration: InputDecoration(labelText: "Número do Compartimento"),
+              keyboardType: TextInputType.number,
+            ),
           ],
         ),
         actions: [
@@ -244,16 +252,25 @@ class _RemedioScreenState extends State<RemedioScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nomeController.text.isNotEmpty && horarioController.text.isNotEmpty) {
-                // ✅ Inserir no banco de dados
+              if (nomeController.text.isNotEmpty &&
+                  horarioController.text.isNotEmpty &&
+                  numerocompartimentoController.text.isNotEmpty) {
+
+                int numeroCompartimento = int.tryParse(numerocompartimentoController.text) ?? 1; // Evita erro
+
                 await _dbHelper.inserirRemedio(
-                  Remedio(nome: nomeController.text, horario: horarioController.text),
+                  Remedio(
+                    nome: nomeController.text,
+                    horario: horarioController.text,
+                    numeroCompartimento: numeroCompartimento,
+                  ),
                 );
+
                 setState(() {
                   _carregarRemedios();
                 });
-                enviarMensagem(nomeController.text);
 
+                enviarMensagem(nomeController.text, horarioController.text, numeroCompartimento);
                 Navigator.pop(context);
               }
             },

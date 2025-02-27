@@ -22,25 +22,25 @@ class DatabaseHelper {
     final path = join(databasesPath, 'remedios.db');
 
     return await openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE remedios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            horario TEXT NOT NULL
-            )
-        ''');
-      },
-    );
-  }
-
-  // ✅ Inserir um novo remédio
-  Future<int> inserirRemedio(Remedio remedio) async {
-    final db = await database;
-    return await db.insert('remedios', remedio.toMap());
-  }
+    path,
+    version: 2, // Atualizado para forçar migração
+    onCreate: (db, version) async {
+      await db.execute('''
+        CREATE TABLE remedios (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          nome TEXT NOT NULL,
+          horario TEXT NOT NULL,
+          numero_compartimento INTEGER NOT NULL
+        )
+      ''');
+    },
+    onUpgrade: (db, oldVersion, newVersion) async {
+      if (oldVersion < 2) {
+        await db.execute('ALTER TABLE remedios ADD COLUMN numero_compartimento INTEGER NOT NULL DEFAULT 1');
+      }
+    },
+  );
+}
 
   // ✅ Listar todos os remédios
   Future<List<Remedio>> listarRemedios() async {

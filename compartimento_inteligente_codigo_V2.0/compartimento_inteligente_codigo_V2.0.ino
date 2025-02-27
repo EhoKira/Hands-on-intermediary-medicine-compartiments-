@@ -43,7 +43,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   } else if (message == "Remedio registrado: Remedio 2") {
     acionaLedEBuzzer(led_remedio2, "Remédio 2");
   }
-}
+} 
 
 // Função para conectar ao Wi-Fi
 void setup_wifi() {
